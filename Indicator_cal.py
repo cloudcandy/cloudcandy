@@ -3,6 +3,7 @@ import pyupbit
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pyupbit.exchange_api import Upbit
 plt.style.use('fivethirtyeight')
 
 def SMA(data, period=30, column='close'):
@@ -34,28 +35,32 @@ def RSI(data, period = 14, column = 'close'):
   down[down > 0] = 0 
   data['up'] = up
   data['down'] = down
-  AVG_Gain = SMA(data, period, column='up')#up.rolling(window=period).mean()
-  AVG_Loss = abs(SMA(data, period, column='down'))#abs(down.rolling(window=period).mean())
+#  AVG_Gain = EMA(data, period, column='up')#up.rolling(window=period).mean()
+#  AVG_Loss = abs(EMA(data, period, column='down'))#abs(down.rolling(window=period).mean())
+  AVG_Gain = up.ewm(com=period-1,min_periods=period).mean()
+  AVG_Loss = abs(down.ewm(com=period-1,min_periods=period).mean())
   RS = AVG_Gain / AVG_Loss
-  RSI = 100.0 - (100.0/ (1.0 + RS))
-  
+  RSI = 100.0 - (100.0/ (1.0 + RS))  
   data['RSI'] = RSI
   return data
 
 df = pyupbit.get_ohlcv(ticker="KRW-ETC",interval="minute5",count=100)
-
+print(pyupbit.get_orderbook(tickers="KRW-ETC"))
 MACD(df)
 RSI(df)
 df['SMA'] = SMA(df)
 df['EMA'] = EMA(df)
 #Show the data
-df
-
 #Plot the chart
 #Create a list of columns to keep
 column_list = ['MACD','Signal_Line']
 df[column_list].plot(figsize=(12.2,6.4)) #Plot the data
 plt.title('MACD for TSLA')
+plt.show()
+
+osc = df['MACD']-df['Signal_Line']
+osc.plot(figsize=(12.2,6.4)) #Plot the data
+plt.title('OSC for TSLA')
 plt.show()
 
 #Plot the chart
